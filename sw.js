@@ -2,6 +2,7 @@ const CACHE_NAME = 'calcu-voice-v1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './script.js',
   './manifest.json',
   './icon.svg'
 ];

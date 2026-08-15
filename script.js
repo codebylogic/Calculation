@@ -130,7 +130,7 @@ let activeTestState = {
 
 const defaultMarkdown = `# Calculation Scores History\n\n| Date & Time | Total Questions | Score | Accuracy | Breakdown |\n|---|---|---|---|---|\n`;
 
-window.onload = function() {
+function initApp() {
     initSettings();
     resetCustomization();
     renderCustomizationControls();
@@ -142,34 +142,59 @@ window.onload = function() {
     let savedName = localStorage.getItem('auth_name');
     let savedRating = localStorage.getItem('auth_rating');
 
+    const authSection = document.getElementById('view-auth');
+    const mainAppSection = document.getElementById('main-app-content');
+
     if (savedUser && savedName) {
         playerId = savedUser;
         studentName = savedName;
         studentRating = savedRating ? parseFloat(savedRating) : 120;
         
-        document.getElementById('view-auth').classList.add('hidden');
-        document.getElementById('main-app-content').classList.remove('hidden');
+        if (authSection) authSection.classList.add('hidden');
+        if (mainAppSection) mainAppSection.classList.remove('hidden');
         
-        if (playerId.toLowerCase() === "shivam@123") {
-            document.getElementById('nav-btn-admin').classList.remove('hidden');
-            document.getElementById('nav-btn-admin').classList.add('flex');
-        } else {
-            document.getElementById('nav-btn-admin').classList.add('hidden');
+        const adminNav = document.getElementById('nav-btn-admin');
+        if (adminNav) {
+            if (playerId.toLowerCase() === "shivam@123") {
+                adminNav.classList.remove('hidden');
+                adminNav.classList.add('flex');
+            } else {
+                adminNav.classList.add('hidden');
+            }
         }
 
-        document.getElementById('home-rating-display').innerText = studentRating;
-        document.getElementById('setting-display-id').innerText = playerId;
-        document.getElementById('setting-display-name').innerText = studentName;
+        const homeRating = document.getElementById('home-rating-display');
+        if (homeRating) homeRating.innerText = studentRating;
+        const setId = document.getElementById('setting-display-id');
+        if (setId) setId.innerText = playerId;
+        const setName = document.getElementById('setting-display-name');
+        if (setName) setName.innerText = studentName;
         
         loadSavedProfileImage();
         loadTop3Podium();
         refreshUserDataFromCloud(playerId);
     } else {
-        document.getElementById('view-auth').classList.remove('hidden');
-        document.getElementById('main-app-content').classList.add('hidden');
+        if (authSection) authSection.classList.remove('hidden');
+        if (mainAppSection) mainAppSection.classList.add('hidden');
         toggleAuthMode(true); 
     }
-};
+}
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((reg) => console.log('PWA ServiceWorker registered successfully:', reg.scope))
+            .catch((err) => console.log('PWA ServiceWorker registration failed:', err));
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+window.onload = initApp;
 
 function callCloudAPI(payload) {
     return fetch(GOOGLE_SHEET_API_URL, {
@@ -269,16 +294,21 @@ function switchUserAccount(targetUserId) {
 }
 
 function toggleAuthMode(toSignup) {
+    const authTitle = document.getElementById('auth-title');
+    const authSubtitle = document.getElementById('auth-subtitle');
+    const formSignup = document.getElementById('form-signup');
+    const formLogin = document.getElementById('form-login');
+
     if (toSignup) {
-        document.getElementById('auth-title').innerText = "Create Account 🚀";
-        document.getElementById('auth-subtitle').innerText = "कैलकुलेशन प्रतियोगिता में शामिल होने के लिए साइन-अप करें।";
-        document.getElementById('form-signup').classList.remove('hidden');
-        document.getElementById('form-login').classList.add('hidden');
+        if (authTitle) authTitle.innerText = "Create Account 🚀";
+        if (authSubtitle) authSubtitle.innerText = "कैलकुलेशन प्रतियोगिता में शामिल होने के लिए साइन-अप करें।";
+        if (formSignup) formSignup.classList.remove('hidden');
+        if (formLogin) formLogin.classList.add('hidden');
     } else {
-        document.getElementById('auth-title').innerText = "Welcome Back 🔑";
-        document.getElementById('auth-subtitle').innerText = "आगे खेलने के लिए अपने क्रेडेंशियल्स से लॉग-इन करें।";
-        document.getElementById('form-signup').classList.add('hidden');
-        document.getElementById('form-login').classList.remove('hidden');
+        if (authTitle) authTitle.innerText = "Welcome Back 🔑";
+        if (authSubtitle) authSubtitle.innerText = "आगे खेलने के लिए अपने क्रेडेंशियल्स से लॉग-इन करें।";
+        if (formSignup) formSignup.classList.add('hidden');
+        if (formLogin) formLogin.classList.remove('hidden');
     }
 }
 
@@ -394,21 +424,25 @@ function handleLogout() {
     localStorage.removeItem('auth_rating');
     localStorage.removeItem('auth_class');
     localStorage.removeItem('auth_age');
-    
     playerId = "";
     studentName = "";
     studentRating = 120;
-
-    document.getElementById('view-auth').classList.remove('hidden');
-    document.getElementById('main-app-content').classList.add('hidden');
+    
+    const authSection = document.getElementById('view-auth');
+    const mainAppSection = document.getElementById('main-app-content');
+    if (authSection) authSection.classList.remove('hidden');
+    if (mainAppSection) mainAppSection.classList.add('hidden');
     toggleAuthMode(false);
-    showToast("🚪", "Logged out successfully.");
+    showToast("🚪", "सफलतापूर्वक लॉग आउट हो गया!");
 }
 
 function showToast(icon, text) {
     const toast = document.getElementById('app-toast');
-    document.getElementById('toast-icon').innerText = icon;
-    document.getElementById('toast-message').innerText = text;
+    if (!toast) return;
+    const iconEl = document.getElementById('toast-icon');
+    const msgEl = document.getElementById('toast-message');
+    if (iconEl) iconEl.innerText = icon;
+    if (msgEl) msgEl.innerText = text;
     
     toast.classList.remove('translate-y-20', 'opacity-0');
     toast.classList.add('translate-y-0', 'opacity-100');
@@ -444,12 +478,18 @@ function navigateTo(viewId) {
         refreshUserDataFromCloud(playerId);
     }
     if (viewId === 'profile') {
-        document.getElementById('profile-card-name').innerText = studentName;
-        document.getElementById('profile-display-id').innerText = playerId;
-        document.getElementById('profile-display-rating').innerText = studentRating;
-        document.getElementById('profile-display-class').innerText = localStorage.getItem('auth_class') || "Not Set";
-        document.getElementById('profile-display-age').innerText = localStorage.getItem('auth_age') || "Not Set";
-        document.getElementById('profile-card-status').innerText = getPlayerStatus(studentRating);
+        const pName = document.getElementById('profile-card-name');
+        if (pName) pName.innerText = studentName;
+        const pId = document.getElementById('profile-display-id');
+        if (pId) pId.innerText = playerId;
+        const pRating = document.getElementById('profile-display-rating');
+        if (pRating) pRating.innerText = studentRating;
+        const pClass = document.getElementById('profile-display-class');
+        if (pClass) pClass.innerText = localStorage.getItem('auth_class') || "Not Set";
+        const pAge = document.getElementById('profile-display-age');
+        if (pAge) pAge.innerText = localStorage.getItem('auth_age') || "Not Set";
+        const pStatus = document.getElementById('profile-card-status');
+        if (pStatus) pStatus.innerText = getPlayerStatus(studentRating);
         loadSavedProfileImage();
         renderSwitchAccountList();
         refreshUserDataFromCloud(playerId);
@@ -457,7 +497,8 @@ function navigateTo(viewId) {
 }
 
 function triggerProfileUpload() {
-    document.getElementById('profile-file-input').click();
+    const input = document.getElementById('profile-file-input');
+    if (input) input.click();
 }
 
 // Cloudinary Direct Unsigned Upload + Auto Sync to Google Sheets
@@ -523,11 +564,15 @@ function loadSavedProfileImage() {
         }
     } else {
         if (container) {
-            container.innerHTML = `<span id="profile-avatar-fallback">👤</span>`;
+            container.innerHTML = `
+                <svg class="w-12 h-12 text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            `;
         }
         if (bottomNavContainer) {
             bottomNavContainer.innerHTML = `
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
             `;
@@ -583,7 +628,7 @@ function initSettings() {
 }
 
 function uploadRatingToCloud() {
-    if (appSettings.incognitoMode) return;
+    if (appSettings.incognitoMode) return; // Prevent cloud uploads in Incognito Practice Mode
     fetch(GOOGLE_SHEET_API_URL, {
         method: "POST",
         mode: "no-cors",
@@ -619,6 +664,7 @@ function presetQuickStart() {
 
 function renderCustomizationControls() {
     const grid = document.getElementById('customization-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     categories.forEach(cat => {
@@ -676,6 +722,7 @@ function proceedToOverview() {
     }
 
     const listContainer = document.getElementById('overview-items-list');
+    if (!listContainer) return;
     listContainer.innerHTML = '';
     
     let calculatedTotalTime = 0;
@@ -704,9 +751,10 @@ function proceedToOverview() {
 }
 
 function toggleIncognitoUI() {
-    const isChecked = document.getElementById('incognito-toggle').checked;
+    const toggle = document.getElementById('incognito-toggle');
     const levelBox = document.getElementById('incognito-level-box');
-    if (isChecked) {
+    if (!toggle || !levelBox) return;
+    if (toggle.checked) {
         levelBox.classList.remove('hidden');
     } else {
         levelBox.classList.add('hidden');
@@ -722,11 +770,15 @@ function getActivePracticeQuestionTier() {
 
 function renderSettingsPage() {
     const list = document.getElementById('settings-categories-list');
+    if (!list) return;
     list.innerHTML = '';
 
-    document.getElementById('global-timer-toggle').checked = appSettings.globalTimer;
-    document.getElementById('incognito-toggle').checked = appSettings.incognitoMode || false;
-    document.getElementById('incognito-tier-select').value = appSettings.customPracticeTier || "learner";
+    const gToggle = document.getElementById('global-timer-toggle');
+    if (gToggle) gToggle.checked = appSettings.globalTimer;
+    const incToggle = document.getElementById('incognito-toggle');
+    if (incToggle) incToggle.checked = appSettings.incognitoMode || false;
+    const incTier = document.getElementById('incognito-tier-select');
+    if (incTier) incTier.value = appSettings.customPracticeTier || "learner";
     
     toggleIncognitoUI();
 
@@ -758,12 +810,15 @@ function renderSettingsPage() {
 }
 
 function toggleGlobalTimerSetting() {
-    appSettings.globalTimer = document.getElementById('global-timer-toggle').checked;
+    const toggle = document.getElementById('global-timer-toggle');
+    if (toggle) appSettings.globalTimer = toggle.checked;
 }
 
 function saveAllSettings() {
-    appSettings.incognitoMode = document.getElementById('incognito-toggle').checked;
-    appSettings.customPracticeTier = document.getElementById('incognito-tier-select').value;
+    const incToggle = document.getElementById('incognito-toggle');
+    if (incToggle) appSettings.incognitoMode = incToggle.checked;
+    const tierSelect = document.getElementById('incognito-tier-select');
+    if (tierSelect) appSettings.customPracticeTier = tierSelect.value;
 
     categories.forEach(cat => {
         const timeInput = document.getElementById(`setting-time-${cat.id}`);
@@ -783,22 +838,24 @@ function saveAllSettings() {
 }
 
 function resetAIDifficulty() {
-    categoryDifficulty = {
-        "Addition (1 Digit)": 2, "Addition": 2, "Addition (2 Digit)": 2, "Addition (3 Digit)": 2,
-        "Subtraction (1 Digit)": 2, "Subtraction": 2, "Subtraction (2 Digit)": 2, "Subtraction (3 Digit)": 2,
-        "Multiplication (1 Digit)": 2, "Multiplication": 2, "Multiplication (2 Digit)": 2,
-        "Division": 2, "Division (Perfect)": 2,
-        "Square Root (1-20)": 2, "Square Root (21-100)": 2,
-        "Cube Root (1-10)": 2, "Cube Root (11-50)": 2,
-        "Fractions": 2, "Percentage": 2, "Decimals": 2, "BODMAS Rules": 2
-    };
-    localStorage.setItem('categoryDifficulty', JSON.stringify(categoryDifficulty));
-    studentRating = 120; 
-    localStorage.setItem('auth_rating', studentRating);
-    uploadRatingToCloud();
-    showToast("🔄", "AI डिफिकल्टी और रेटिंग को रीसेट कर दिया गया है!");
-    document.getElementById('home-rating-display').innerText = studentRating;
-    navigateTo('home');
+    if (confirm("क्या आप सभी कैटेगोरीज के AI डिफिकल्टी लेवल को रीसेट करके फिर से मीडियम (Level 2) करना चाहते हैं?")) {
+        categoryDifficulty = {
+            "Addition (1 Digit)": 2, "Addition": 2, "Addition (2 Digit)": 2, "Addition (3 Digit)": 2,
+            "Subtraction (1 Digit)": 2, "Subtraction": 2, "Subtraction (2 Digit)": 2, "Subtraction (3 Digit)": 2,
+            "Multiplication (1 Digit)": 2, "Multiplication": 2, "Multiplication (2 Digit)": 2,
+            "Division": 2, "Division (Perfect)": 2,
+            "Square Root (1-20)": 2, "Square Root (21-100)": 2,
+            "Cube Root (1-10)": 2, "Cube Root (11-50)": 2,
+            "Fractions": 2, "Percentage": 2, "Decimals": 2, "BODMAS Rules": 2
+        };
+        localStorage.setItem('categoryDifficulty', JSON.stringify(categoryDifficulty));
+        studentRating = 120; 
+        localStorage.setItem('auth_rating', studentRating);
+        uploadRatingToCloud();
+        showToast("🔄", "AI डिफिकल्टी और रेटिंग को रीसेट कर दिया गया है!");
+        document.getElementById('home-rating-display').innerText = studentRating;
+        navigateTo('home');
+    }
 }
 
 function getGCD(a, b) {
@@ -1324,37 +1381,47 @@ function loadCurrentQuestion() {
     }
 
     activeTestState.isProcessingAnswer = false;
-    document.getElementById('validation-overlay').classList.add('hidden');
-    document.getElementById('manual-answer-input').value = "";
-    document.getElementById('test-spoken-transcript').innerText = "अपनी आवाज़ में साफ जवाब बोलें...";
-    document.getElementById('test-spoken-transcript').className = "text-indigo-300 font-medium italic";
+    const valOverlay = document.getElementById('validation-overlay');
+    if (valOverlay) valOverlay.classList.add('hidden');
+    const manualInput = document.getElementById('manual-answer-input');
+    if (manualInput) manualInput.value = "";
+    const transcriptEl = document.getElementById('test-spoken-transcript');
+    if (transcriptEl) {
+        transcriptEl.innerText = "अपनी आवाज़ में साफ जवाब बोलें...";
+        transcriptEl.className = "text-indigo-300 font-medium italic";
+    }
 
     const curQ = activeTestState.questions[activeTestState.currentIndex];
     
-    document.getElementById('test-category-label').innerText = curQ.category;
-    document.getElementById('test-progress-counter').innerText = `Question ${activeTestState.currentIndex + 1} of ${activeTestState.questions.length}`;
-    document.getElementById('test-question-string').innerText = curQ.question;
+    const catLabel = document.getElementById('test-category-label');
+    if (catLabel) catLabel.innerText = curQ.category;
+    const progressEl = document.getElementById('test-progress-counter');
+    if (progressEl) progressEl.innerText = `Question ${activeTestState.currentIndex + 1} of ${activeTestState.questions.length}`;
+    const questionString = document.getElementById('test-question-string');
+    if (questionString) questionString.innerText = curQ.question;
 
     const isTimerActive = appSettings.globalTimer && appSettings.countdownEnabled[curQ.category];
     const maxDuration = appSettings.categoryTimes[curQ.category] || 15;
+    const timerBox = document.getElementById('timer-box');
 
     if (isTimerActive) {
-        document.getElementById('timer-box').classList.remove('hidden');
+        if (timerBox) timerBox.classList.remove('hidden');
         let countRemaining = maxDuration;
         activeTestState.secondsUsed = 0; 
-        document.getElementById('test-timer-display').innerText = `${countRemaining}s Left`;
+        const timerDisplay = document.getElementById('test-timer-display');
+        if (timerDisplay) timerDisplay.innerText = `${countRemaining}s Left`;
 
         activeTestState.currentQuestionTimer = setInterval(() => {
             countRemaining--;
             activeTestState.secondsUsed++; 
-            document.getElementById('test-timer-display').innerText = `${countRemaining}s Left`;
+            if (timerDisplay) timerDisplay.innerText = `${countRemaining}s Left`;
             if (countRemaining <= 0) {
                 clearInterval(activeTestState.currentQuestionTimer);
                 handleAnswerValidation(false, "समय समाप्त!");
             }
         }, 1000);
     } else {
-        document.getElementById('timer-box').classList.add('hidden');
+        if (timerBox) timerBox.classList.add('hidden');
         activeTestState.secondsUsed = 0; 
     }
 
@@ -1389,7 +1456,7 @@ function playFeedbackBeep(success) {
             osc.stop(ctx.currentTime + 0.25);
         }
     } catch(e) {
-        console.log("Audio feedback error bypassed", e);
+        console.log("Audio failed to load safely", e);
     }
 }
 
@@ -1428,7 +1495,8 @@ function handleAnswerValidation(isCorrect, debugMsg) {
             wasLastWrong,
             squeezeApplies
         );
-        document.getElementById('home-rating-display').innerText = studentRating;
+        const hRating = document.getElementById('home-rating-display');
+        if (hRating) hRating.innerText = studentRating;
 
         incrementTodaySolvedCount();
         uploadRatingToCloud();
@@ -1460,28 +1528,29 @@ function handleAnswerValidation(isCorrect, debugMsg) {
     const subEl = document.getElementById('validation-subtitle');
     const iconBox = document.getElementById('validation-icon-box');
 
-    if (isCorrect) {
-        overlay.className = "absolute inset-0 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 animate-fade-in";
-        iconBox.className = "w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-2xl font-bold";
-        iconBox.innerHTML = `✓`;
-        titleEl.className = "text-2xl font-black text-emerald-400";
-        
-        if (currentStreak >= 3) {
-            titleEl.innerText = `🔥 ${currentStreak} की स्ट्रीक! सही जवाब`;
+    if (overlay && titleEl && subEl && iconBox) {
+        if (isCorrect) {
+            overlay.className = "absolute inset-0 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 animate-fade-in";
+            iconBox.className = "w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-2xl font-bold";
+            iconBox.innerHTML = `✓`;
+            titleEl.className = "text-2xl font-black text-emerald-400";
+            
+            if (currentStreak >= 3) {
+                titleEl.innerText = `🔥 ${currentStreak} की स्ट्रीक! सही जवाब`;
+            } else {
+                titleEl.innerText = "सही जवाब!";
+            }
+            subEl.innerText = debugMsg || "सफलतापूर्वक वेरिफाई हुआ";
         } else {
-            titleEl.innerText = "सही जवाब!";
+            overlay.className = "absolute inset-0 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 animate-fade-in";
+            iconBox.className = "w-16 h-16 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-2xl font-bold";
+            iconBox.innerHTML = `✗`;
+            titleEl.className = "text-2xl font-black text-rose-400";
+            titleEl.innerText = debugMsg === "समय समाप्त!" ? "समय समाप्त!" : "गलत जवाब";
+            subEl.innerHTML = `सही जवाब था: <span class="font-bold text-white font-mono">${curQ.correctAnswer}</span>`;
         }
-        subEl.innerText = debugMsg || "सफलतापूर्वक वेरिफाई हुआ";
-    } else {
-        overlay.className = "absolute inset-0 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 animate-fade-in";
-        iconBox.className = "w-16 h-16 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-2xl font-bold";
-        iconBox.innerHTML = `✗`;
-        titleEl.className = "text-2xl font-black text-rose-400";
-        titleEl.innerText = debugMsg === "समय समाप्त!" ? "समय समाप्त!" : "गलत जवाब";
-        subEl.innerHTML = `सही जवाब था: <span class="font-bold text-white font-mono">${curQ.correctAnswer}</span>`;
+        overlay.classList.remove('hidden');
     }
-
-    overlay.classList.remove('hidden');
 
     setTimeout(() => {
         activeTestState.currentIndex++;
@@ -1491,7 +1560,9 @@ function handleAnswerValidation(isCorrect, debugMsg) {
 
 function submitManualAnswer() {
     if (activeTestState.isProcessingAnswer) return;
-    const val = document.getElementById('manual-answer-input').value.trim();
+    const input = document.getElementById('manual-answer-input');
+    if (!input) return;
+    const val = input.value.trim();
     if (val === "") return;
 
     const curQ = activeTestState.questions[activeTestState.currentIndex];
@@ -1527,37 +1598,45 @@ function finishTestRun() {
     currentStreak = 0;
     wasLastWrong = false;
 
-    document.getElementById('report-rating-display').innerText = studentRating;
-    document.getElementById('home-rating-display').innerText = studentRating;
-    document.getElementById('report-accuracy-percentage').innerText = `${percentage}%`;
-    document.getElementById('report-fraction-score').innerText = `${correct} / ${total} Questions Correct`;
+    const repRating = document.getElementById('report-rating-display');
+    if (repRating) repRating.innerText = studentRating;
+    const homeRating = document.getElementById('home-rating-display');
+    if (homeRating) homeRating.innerText = studentRating;
+    const repPct = document.getElementById('report-accuracy-percentage');
+    if (repPct) repPct.innerText = `${percentage}%`;
+    const repFrac = document.getElementById('report-fraction-score');
+    if (repFrac) repFrac.innerText = `${correct} / ${total} Questions Correct`;
 
     const titleEl = document.getElementById('report-feedback-title');
-    if (percentage === 100) titleEl.innerText = "🌟 शत-प्रतिशत परफेक्ट!";
-    else if (percentage >= 80) titleEl.innerText = "🔥 बेमिसाल स्पीड और एक्यूरेसी!";
-    else if (percentage >= 50) titleEl.innerText = "📈 बहुत बढ़िया, अभ्यास जारी रखें!";
-    else titleEl.innerText = "💪 ध्यान दें और दोबारा प्रयास करें!";
+    if (titleEl) {
+        if (percentage === 100) titleEl.innerText = "🌟 शत-प्रतिशत परफेक्ट!";
+        else if (percentage >= 80) titleEl.innerText = "🔥 बेमिसाल स्पीड और एक्यूरेसी!";
+        else if (percentage >= 50) titleEl.innerText = "📈 बहुत बढ़िया, अभ्यास जारी रखें!";
+        else titleEl.innerText = "💪 ध्यान दें और दोबारा प्रयास करें!";
+    }
 
     const breakdownContainer = document.getElementById('report-category-breakdown');
-    breakdownContainer.innerHTML = '';
+    if (breakdownContainer) {
+        breakdownContainer.innerHTML = '';
 
-    Object.keys(activeTestState.scoresBreakdown).forEach(catName => {
-        const metric = activeTestState.scoresBreakdown[catName];
-        const catPercentage = metric.total > 0 ? Math.round((metric.correct / metric.total) * 100) : 0;
+        Object.keys(activeTestState.scoresBreakdown).forEach(catName => {
+            const metric = activeTestState.scoresBreakdown[catName];
+            const catPercentage = metric.total > 0 ? Math.round((metric.correct / metric.total) * 100) : 0;
 
-        const card = document.createElement('div');
-        card.className = "space-y-1.5";
-        card.innerHTML = `
-            <div class="flex justify-between text-xs font-semibold">
-                <span class="text-slate-300">${catName}</span>
-                <span class="text-slate-400 font-mono">${metric.correct} / ${metric.total} correct (${catPercentage}%)</span>
-            </div>
-            <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
-                <div class="bg-indigo-500 h-full rounded-full" style="width: ${catPercentage}%"></div>
-            </div>
-        `;
-        breakdownContainer.appendChild(card);
-    });
+            const card = document.createElement('div');
+            card.className = "space-y-1.5";
+            card.innerHTML = `
+                <div class="flex justify-between text-xs font-semibold">
+                    <span class="text-slate-300">${catName}</span>
+                    <span class="text-slate-400 font-mono">${metric.correct} / ${metric.total} correct (${catPercentage}%)</span>
+                </div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                    <div class="bg-indigo-500 h-full rounded-full" style="width: ${catPercentage}%"></div>
+                </div>
+            `;
+            breakdownContainer.appendChild(card);
+        });
+    }
 }
 
 function parseWordToDigit(word) {
@@ -1667,10 +1746,13 @@ function verifyVerbalResponse(transcript, actualAns) {
 
 function initSpeechEngine() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const waveEl = document.getElementById('microphone-wave');
     if (!SpeechRecognition) {
-        document.getElementById('microphone-wave').innerHTML = `
-            <span class="text-xs text-rose-400 font-bold">⚠️ Speech Recognition is not supported on this browser. Please use manual fallback.</span>
-        `;
+        if (waveEl) {
+            waveEl.innerHTML = `
+                <span class="text-xs text-rose-400 font-bold">⚠️ Speech Recognition is not supported on this browser. Please use manual fallback.</span>
+            `;
+        }
         return;
     }
 
@@ -1681,8 +1763,11 @@ function initSpeechEngine() {
 
     rec.onstart = function() {
         activeTestState.activeListening = true;
-        document.getElementById('mic-status-label').innerText = "वॉयस इंजन सक्रिय है: बोलिए (Hindi/English Support)...";
-        document.getElementById('mic-status-label').className = "text-xs font-bold text-emerald-400";
+        const micLabel = document.getElementById('mic-status-label');
+        if (micLabel) {
+            micLabel.innerText = "वॉयस इंजन सक्रिय है: बोलिए (Hindi/English Support)...";
+            micLabel.className = "text-xs font-bold text-emerald-400";
+        }
     };
 
     rec.onresult = function(event) {
@@ -1696,8 +1781,11 @@ function initSpeechEngine() {
         }
 
         if (finalTranscript !== '') {
-            document.getElementById('test-spoken-transcript').innerText = `"${finalTranscript.trim()}"`;
-            document.getElementById('test-spoken-transcript').className = "text-indigo-400 font-bold";
+            const spokenEl = document.getElementById('test-spoken-transcript');
+            if (spokenEl) {
+                spokenEl.innerText = `"${finalTranscript.trim()}"`;
+                spokenEl.className = "text-indigo-400 font-bold";
+            }
 
             const curQ = activeTestState.questions[activeTestState.currentIndex];
             const matched = verifyVerbalResponse(finalTranscript, curQ.correctAnswer);
@@ -1783,19 +1871,23 @@ function loadScoresHistory() {
     const parsedRecords = parseMarkdownTable(fileContent);
 
     const tbody = document.getElementById('scores-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
+    const noScores = document.getElementById('no-scores-indicator');
+    const tableContainer = document.getElementById('score-table-container');
+
     if (parsedRecords.length === 0) {
-        document.getElementById('no-scores-indicator').className = "p-8 text-center text-slate-500 text-sm italic";
-        document.getElementById('score-table-container').classList.add('border-slate-800/20');
+        if (noScores) noScores.className = "p-8 text-center text-slate-500 text-sm italic";
+        if (tableContainer) tableContainer.classList.add('border-slate-800/20');
         renderGraphView([]); 
         return;
     }
 
-    document.getElementById('no-scores-indicator').className = "hidden";
-    document.getElementById('score-table-container').classList.remove('border-slate-800/20');
+    if (noScores) noScores.className = "hidden";
+    if (tableContainer) tableContainer.classList.remove('border-slate-800/20');
 
-    parsedRecords.reverse().forEach(rec => {
+    parsedRecords.slice().reverse().forEach(rec => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-900/30 transition border-b border-slate-800/40";
         tr.innerHTML = `
@@ -1807,7 +1899,7 @@ function loadScoresHistory() {
         `;
         tbody.appendChild(tr);
     });
-    renderGraphView(parsedRecords.reverse()); 
+    renderGraphView(parsedRecords); 
 }
 
 function parseMarkdownTable(md) {
@@ -1834,6 +1926,8 @@ function toggleScoreViewMode() {
     const table = document.getElementById('score-table-container');
     const graph = document.getElementById('score-graph-container');
     const label = document.getElementById('score-toggle-label');
+
+    if (!table || !graph || !label) return;
 
     if (table.classList.contains('hidden')) {
         table.classList.remove('hidden');
@@ -1926,20 +2020,24 @@ function downloadRawMarkdown() {
 }
 
 function clearScoreHistory() {
-    localStorage.setItem('calculation_score_md', defaultMarkdown);
-    loadScoresHistory();
-    showToast("🗑️", "Scores database cleared!");
+    if (confirm("Are you sure you want to clear your database?")) {
+        localStorage.setItem('calculation_score_md', defaultMarkdown);
+        loadScoresHistory();
+        showToast("🗑️", "Scores database cleared!");
+    }
 }
 
 function renderLeaderboard() {
-    document.getElementById('lb-user-name').innerText = studentName;
-    document.getElementById('lb-user-rating').innerText = studentRating;
+    const lbName = document.getElementById('lb-user-name');
+    if (lbName) lbName.innerText = studentName;
+    const lbRating = document.getElementById('lb-user-rating');
+    if (lbRating) lbRating.innerText = studentRating;
 
     const tbody = document.getElementById('leaderboard-table-body');
     const chartContainer = document.getElementById('lb-bar-chart-container');
     
-    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic">गूगल क्लाउड से लाइव रैंकिंग लोड हो रही है...</td></tr>';
-    if(chartContainer) chartContainer.innerHTML = '<p class="text-xs text-slate-500 italic text-center py-4">ग्राफ़ लोड हो रहा है...</p>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic">गूगल क्लाउड से लाइव रैंकिंग लोड हो रही है...</td></tr>';
+    if (chartContainer) chartContainer.innerHTML = '<p class="text-xs text-slate-500 italic text-center py-4">ग्राफ़ लोड हो रहा है...</p>';
 
     callCloudAPI({ action: "fetch" })
     .then(globalPlayers => {
@@ -1949,40 +2047,42 @@ function renderLeaderboard() {
 
         globalPlayers.sort((a, b) => b.rating - a.rating);
 
-        tbody.innerHTML = '';
-        globalPlayers.forEach((player, index) => {
-            const rank = index + 1;
-            let rankBadge = rank;
-            
-            if (rank === 1) rankBadge = "🥇";
-            else if (rank === 2) rankBadge = "🥈";
-            else if (rank === 3) rankBadge = "🥉";
+        if (tbody) {
+            tbody.innerHTML = '';
+            globalPlayers.forEach((player, index) => {
+                const rank = index + 1;
+                let rankBadge = rank;
+                
+                if (rank === 1) rankBadge = "🥇";
+                else if (rank === 2) rankBadge = "🥈";
+                else if (rank === 3) rankBadge = "🥉";
 
-            const isSelf = player.id === playerId;
-            const rowClass = isSelf ? "bg-indigo-500/10 font-bold border-l-2 border-indigo-500" : "hover:bg-slate-900/30 transition";
-            
-            let playerStatus = getPlayerStatus(player.rating);
+                const isSelf = player.id === playerId;
+                const rowClass = isSelf ? "bg-indigo-500/10 font-bold border-l-2 border-indigo-500" : "hover:bg-slate-900/30 transition";
+                
+                let playerStatus = getPlayerStatus(player.rating);
 
-            const tr = document.createElement('tr');
-            tr.className = `${rowClass} border-b border-slate-800/40`;
-            tr.innerHTML = `
-                <td class="p-4 text-center font-mono text-sm">${rankBadge}</td>
-                <td class="p-4 text-slate-150">${player.name} ${isSelf ? '(You) 👤' : ''}</td>
-                <td class="p-4 text-center font-mono font-extrabold text-indigo-400">${player.rating}</td>
-                <td class="p-4 text-center">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                        playerStatus === 'Grandmaster' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                        playerStatus === 'Master' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                        playerStatus === 'Elite Heroic' || playerStatus === 'Heroic' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
-                        playerStatus === 'Platinum' || playerStatus === 'Dimand' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
-                        playerStatus === 'Gold' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                        playerStatus === 'Silver' ? 'bg-slate-500/10 text-slate-300 border border-slate-500/20' :
-                        'bg-slate-800 text-slate-400'
-                    }">${playerStatus}</span>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+                const tr = document.createElement('tr');
+                tr.className = `${rowClass} border-b border-slate-800/40`;
+                tr.innerHTML = `
+                    <td class="p-4 text-center font-mono text-sm">${rankBadge}</td>
+                    <td class="p-4 text-slate-150">${player.name} ${isSelf ? '(You) 👤' : ''}</td>
+                    <td class="p-4 text-center font-mono font-extrabold text-indigo-400">${player.rating}</td>
+                    <td class="p-4 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                            playerStatus === 'Grandmaster' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            playerStatus === 'Master' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                            playerStatus === 'Elite Heroic' || playerStatus === 'Heroic' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                            playerStatus === 'Platinum' || playerStatus === 'Dimand' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
+                            playerStatus === 'Gold' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                            playerStatus === 'Silver' ? 'bg-slate-500/10 text-slate-300 border border-slate-500/20' :
+                            'bg-slate-800 text-slate-400'
+                        }">${playerStatus}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
         if(chartContainer) {
             chartContainer.innerHTML = '';
@@ -2028,8 +2128,8 @@ function renderLeaderboard() {
         }
     })
     .catch(err => {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-rose-400">क्लाउड डेटाबेस से कनेक्ट करने में एरर आया।</td></tr>';
-        if(chartContainer) chartContainer.innerHTML = '';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-rose-400">क्लाउड डेटाबेस से कनेक्ट करने में एरर आया।</td></tr>';
+        if (chartContainer) chartContainer.innerHTML = '';
         console.error(err);
     });
 }
@@ -2052,7 +2152,9 @@ function getDynamicTimePin() {
 }
 
 function checkAdminAuth() {
-    const enteredPin = document.getElementById('admin-pin').value.trim();
+    const pinInput = document.getElementById('admin-pin');
+    if (!pinInput) return;
+    const enteredPin = pinInput.value.trim();
     const currentExpectedPin = getDynamicTimePin();
 
     if (enteredPin === currentExpectedPin || enteredPin === ADMIN_SECRET_PIN) {
@@ -2061,12 +2163,13 @@ function checkAdminAuth() {
         showToast("🔓", "Access Granted! Time PIN Verified.");
         fetchAdminCloudData();
     } else {
-        showToast("❌", "Wrong PIN!");
+        showToast("❌", "wrong pin !");
     }
 }
 
 function lockAdminPanel() {
-    document.getElementById('admin-pin').value = "";
+    const pinInput = document.getElementById('admin-pin');
+    if (pinInput) pinInput.value = "";
     document.getElementById('admin-dashboard').classList.add('hidden');
     document.getElementById('admin-auth').classList.remove('hidden');
     showToast("🔒", "Panel locked successfully.");
@@ -2074,7 +2177,7 @@ function lockAdminPanel() {
 
 function fetchAdminCloudData() {
     const tbody = document.getElementById('admin-table-body');
-    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">क्लाउड से छात्र सूची लोड हो रही है...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">क्लाउड से छात्र सूची लोड हो रही है...</td></tr>';
 
     fetch(GOOGLE_SHEET_API_URL, {
         method: "POST",
@@ -2087,22 +2190,25 @@ function fetchAdminCloudData() {
         renderAdminTable(data);
     })
     .catch(err => {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-rose-400">डेटा लोड करने में विफल।</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-rose-400">डेटा लोड करने में विफल।</td></tr>';
         console.error(err);
     });
 }
 
 function renderAdminTable(players) {
     const tbody = document.getElementById('admin-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
     
     if(!players || players.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">डेटाबेस में कोई छात्र नहीं मिला।</td></tr>';
-        document.getElementById('total-students-count').innerText = "0";
+        const totalCount = document.getElementById('total-students-count');
+        if (totalCount) totalCount.innerText = "0";
         return;
     }
 
-    document.getElementById('total-students-count').innerText = players.length;
+    const totalCount = document.getElementById('total-students-count');
+    if (totalCount) totalCount.innerText = players.length;
 
     players.forEach((player) => {
         const safeId = player.id ? player.id.replace(/'/g, "\\'") : '';
@@ -2139,7 +2245,8 @@ function openEditModal(userId) {
 }
 
 function closeEditModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
+    const modal = document.getElementById('edit-modal');
+    if (modal) modal.classList.add('hidden');
 }
 
 function saveUserEdits() {
@@ -2228,22 +2335,24 @@ function handleAdminSignup() {
 }
 
 function deleteStudent(userId, studentName) {
-    showToast("⏳", `Deleting ${studentName} from cloud...`);
-    
-    fetch(GOOGLE_SHEET_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-            action: "delete",
-            id: userId
+    if (confirm(`क्या आप सचमुच ${studentName} (${userId}) का रिकॉर्ड दोनों शीट से डिलीट करना चाहते हैं?`)) {
+        showToast("⏳", `Deleting ${studentName} from cloud...`);
+        
+        fetch(GOOGLE_SHEET_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+                action: "delete",
+                id: userId
+            })
         })
-    })
-    .then(() => {
-        showToast("🗑️", `${studentName} removed successfully!`);
-        fetchAdminCloudData();
-    })
-    .catch(err => {
-        showToast("❌", "Failed to delete student.");
-        console.error(err);
-    });
+        .then(() => {
+            showToast("🗑️", `${studentName} removed successfully!`);
+            fetchAdminCloudData();
+        })
+        .catch(err => {
+            showToast("❌", "Failed to delete student.");
+            console.error(err);
+        });
+    }
 }
