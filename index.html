@@ -1,32 +1,901 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950 text-slate-100 dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Calcu-Voice: Voice-Powered Calculation Trainer (Hindi/English)</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice-Powered Calculation Trainer (Hindi/Hinglish Support)</title>
     
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#4f46e5" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
+    <!-- PWA Meta Tags and Manifest Link -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <link rel="apple-touch-icon" href="./icon.svg">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet" />
-  </head>
-  <body class="h-full bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200 antialiased font-['Plus_Jakarta_Sans',sans-serif]">
-    <div id="root" class="h-full flex flex-col"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
-        });
-      }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            950: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
     </script>
-  </body>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden antialiased bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+
+    <!-- SIGNUP / LOGIN GATE SCREEN -->
+    <section id="view-auth" class="flex-grow flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-md">
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-3 bg-brand-500/10 rounded-2xl border border-brand-500/20 text-brand-400 mb-1">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black text-white tracking-tight" id="auth-title">Create Account 🚀</h2>
+                <p class="text-xs text-slate-400" id="auth-subtitle">कैलकुलेशन प्रतियोगिता में शामिल होने के लिए साइन-अप करें।</p>
+            </div>
+
+            <!-- SIGNUP FORM BLOCKS -->
+            <div id="form-signup" class="space-y-3">
+                <input type="text" id="reg-name" placeholder="Full Name (अपना असली नाम)" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <input type="text" id="reg-class" placeholder="Class (कक्षा जैसे: 8th, 10th)" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <input type="number" id="reg-age" placeholder="Age (उम्र)" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <input type="text" id="reg-userid" placeholder="Create User ID (यूनिक आईडी)" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition font-mono">
+                <input type="password" id="reg-password" placeholder="Create Password" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <button onclick="handleSignupSubmit()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 font-bold text-xs text-white rounded-xl transition shadow-lg shadow-indigo-600/20 active:scale-[0.99]">Sign Up & Register</button>
+                <p class="text-[11px] text-center text-slate-400 pt-2">Already have an account? <span onclick="toggleAuthMode(false)" class="text-brand-400 font-bold cursor-pointer hover:underline">Log In here</span></p>
+            </div>
+
+            <!-- LOGIN FORM BLOCKS -->
+            <div id="form-login" class="hidden space-y-3">
+                <input type="text" id="log-userid" placeholder="Enter User ID" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition font-mono">
+                <input type="password" id="log-password" placeholder="Enter Password" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <button onclick="handleLoginSubmit()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 font-bold text-xs text-white rounded-xl transition shadow-lg shadow-emerald-600/20 active:scale-[0.99]">Log In</button>
+                <p class="text-[11px] text-center text-slate-400 pt-2">New here? <span onclick="toggleAuthMode(true)" class="text-brand-400 font-bold cursor-pointer hover:underline">Create an account</span></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN APP WRAPPER (HIDDEN UNTIL AUTH SUCCESS) -->
+    <div id="main-app-content" class="hidden flex-grow flex flex-col justify-between">
+        <!-- Top Navigation Bar -->
+        <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('home')">
+                    <div class="bg-gradient-to-tr from-brand-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">CALCU-VOICE</h1>
+                        <p class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">Interactive Speech Math</p>
+                    </div>
+                </div>
+                <button id="menu-toggle-btn" onclick="navigateTo('settings')" class="p-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white rounded-xl transition flex items-center shadow-sm">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8 pb-24 flex flex-col justify-start">
+
+            <!-- HOME PAGE -->
+            <section id="view-home" class="space-y-10 animate-fade-in">
+                
+                <!-- TOP 3 RANKERS PODIUM (GLOW & CURVED NAME EFFECT) -->
+                <div class="flex items-end justify-center gap-2 md:gap-6 pt-4 pb-2 select-none">
+                    
+                    <!-- 3RD RANK (LEFT - BRONZE) -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-amber-600/80 bg-slate-900 shadow-[0_0_15px_rgba(217,119,6,0.4)] flex items-center justify-center p-0.5">
+                            <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-950">
+                                <img id="top-3rd-img" src="" alt="3rd Rank" class="w-full h-full object-cover hidden">
+                                <span id="top-3rd-fallback" class="text-2xl">🥉</span>
+                            </div>
+                            <span class="absolute -top-2 -right-1 bg-amber-700 text-amber-100 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-amber-500 shadow">3rd</span>
+                        </div>
+                        <span id="top-3rd-name" class="text-xs font-bold text-slate-300 mt-2 tracking-wide truncate max-w-[80px] text-center">3rd Rank</span>
+                    </div>
+
+                    <!-- 1ST RANK (CENTER - GOLD / MAXIMUM GLOW) -->
+                    <div class="flex flex-col items-center -translate-y-4">
+                        <div class="relative flex flex-col items-center">
+                            <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-yellow-300 bg-amber-950/30 shadow-[0_0_40px_rgba(250,204,21,0.9),0_0_80px_rgba(234,179,8,0.6)] flex items-center justify-center p-1 z-10">
+                                <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-900 border-2 border-yellow-300 shadow-[inner_0_0_15px_rgba(250,204,21,0.8)]">
+                                    <img id="top-1st-img" src="" alt="1st Rank" class="w-full h-full object-cover hidden">
+                                    <span id="top-1st-fallback" class="text-4xl drop-shadow-[0_0_10px_rgba(250,204,21,1)]">🥇</span>
+                                </div>
+                                <span class="absolute -top-3 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-slate-950 text-xs font-black px-3 py-0.5 rounded-full border-2 border-yellow-100 shadow-[0_0_15px_rgba(250,204,21,0.9)] tracking-wider">👑 1st</span>
+                            </div>
+
+                            <!-- Curved SVG Name -->
+                            <svg class="w-32 h-12 md:w-40 md:h-14 -mt-3 overflow-visible pointer-events-none" viewBox="0 0 160 60">
+                                <path id="curve-path-1st" d="M 10,10 A 70,70 0 0,0 150,10" fill="transparent" />
+                                <text class="fill-yellow-300 font-extrabold text-[13px] md:text-[14px] tracking-wider uppercase drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]">
+                                    <textPath href="#curve-path-1st" startOffset="50%" text-anchor="middle" id="top-1st-name">
+                                        1st Rank
+                                    </textPath>
+                                </text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 2ND RANK (RIGHT - SILVER) -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-slate-300 bg-slate-900 shadow-[0_0_20px_rgba(203,213,225,0.5)] flex items-center justify-center p-0.5">
+                            <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-950">
+                                <img id="top-2nd-img" src="" alt="2nd Rank" class="w-full h-full object-cover hidden">
+                                <span id="top-2nd-fallback" class="text-2xl">🥈</span>
+                            </div>
+                            <span class="absolute -top-2 -right-1 bg-slate-700 text-slate-100 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-slate-400 shadow">2nd</span>
+                        </div>
+                        <span id="top-2nd-name" class="text-xs font-bold text-slate-300 mt-2 tracking-wide truncate max-w-[80px] text-center">2nd Rank</span>
+                    </div>
+
+                </div>
+
+                <div class="text-center max-w-3xl mx-auto space-y-5 pt-1">
+                    <span class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                        🎙️ Voice-Activated Verbal Calculation Trainer (Hindi/Hinglish Support)
+                    </span>
+                    <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                        Sharpen Your Mind Using <span class="bg-gradient-to-r from-brand-400 to-indigo-500 bg-clip-text text-transparent">Verbal Power</span>
+                    </h2>
+                    <p class="text-slate-400 text-sm md:text-base leading-relaxed">
+                        Improve your mental arithmetic dynamically. Simply listen to or view the math challenge, speak the answer aloud in English, Hindi, or Hinglish, and our smart engine verifies it instantly in real-time.
+                    </p>
+                    
+                    <!-- Home Rating Badge Display -->
+                    <div class="mt-2 text-center">
+                        <span class="inline-flex items-center px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                            🧠 Your Current Math Rating: <span id="home-rating-display" class="font-mono ml-1.5 text-white">120</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Features Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+                    <div class="p-5 bg-slate-900/40 border border-slate-800/80 rounded-2xl space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm font-bold">16</div>
+                        <h3 class="text-sm font-bold text-slate-100">Customizable Formats</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">Choose from basic Double Addition, Squares, Decimal Arithmetic, to BODMAS structures.</p>
+                    </div>
+                    <div class="p-5 bg-slate-900/40 border border-slate-800/80 rounded-2xl space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 text-sm">🎙️</div>
+                        <h3 class="text-sm font-bold text-slate-100">Hindi/Hinglish Engine</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">Speak naturally! Supports parsing of numbers spoken in English, Hindi, or pure numerical digits.</p>
+                    </div>
+                    <div class="p-5 bg-slate-900/40 border border-slate-800/80 rounded-2xl space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-sm">📈</div>
+                        <h3 class="text-sm font-bold text-slate-100">Global Rankings Live</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">Scores are saved directly into Google Sheets cloud for competitive classroom leaderboard ranking.</p>
+                    </div>
+                </div>
+
+                <!-- Play Trigger Section -->
+                <div class="flex flex-col items-center justify-center pt-6 border-t border-slate-900">
+                    <div class="text-center mb-4">
+                        <p class="text-xs md:text-sm text-slate-500">Ready to put your computational speed to the test?</p>
+                    </div>
+                    <button onclick="navigateTo('customize')" class="group relative px-8 py-3.5 bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center space-x-3">
+                        <span>Let's Play Trainer</span>
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PLAY: CUSTOMIZE SCREEN -->
+            <section id="view-customize" class="hidden space-y-8 animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white">Customize Your Test Set</h2>
+                        <p class="text-xs text-slate-400">Select how many questions of each mathematical category you want in your rotation.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="resetCustomization()" class="px-3 py-1.5 text-xs font-semibold bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                            Reset Counts
+                        </button>
+                        <button onclick="presetQuickStart()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-brand-400 hover:bg-brand-500/20 transition">
+                            Preset (Quick 5 Each)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="customization-grid">
+                    <!-- Dynamically populated category controls -->
+                </div>
+
+                <div class="flex items-center justify-end pt-6 border-t border-slate-900">
+                    <button onclick="proceedToOverview()" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/10 flex items-center space-x-2">
+                        <span>Proceed to Overview</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PLAY: OVERVIEW SCREEN -->
+            <section id="view-overview" class="hidden space-y-8 animate-fade-in max-w-2xl mx-auto">
+                <div class="text-center space-y-2">
+                    <h2 class="text-2xl font-black text-white">Test Rotation Overview</h2>
+                    <p class="text-xs text-slate-400">Here's a breakdown of the customized math assessment before you begin.</p>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-4">
+                    <div class="divide-y divide-slate-800" id="overview-items-list">
+                        <!-- Dynamic overview items row -->
+                    </div>
+
+                    <div class="pt-4 flex justify-between text-sm font-bold border-t border-slate-800 text-slate-200">
+                        <span>Total Question Volume</span>
+                        <span id="overview-total-count" class="text-indigo-400">0 Questions</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-slate-200">
+                        <span>Estimated Max Duration</span>
+                        <span id="overview-total-duration" class="text-indigo-400">0 Seconds</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-4 pt-4">
+                    <button onclick="navigateTo('customize')" class="px-5 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-300 font-bold rounded-xl transition flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        <span>Back to Customize</span>
+                    </button>
+                    <button onclick="startTestProcess()" class="flex-grow px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-xl transition shadow-lg shadow-emerald-600/10 flex items-center justify-center space-x-2">
+                        <span class="text-base font-bold">Start Verbal Test</span>
+                        <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ACTIVE TEST INTERFACE -->
+            <section id="view-test" class="hidden space-y-8 animate-fade-in max-w-3xl mx-auto">
+                <div class="flex items-center justify-between bg-slate-900/40 p-4 border border-slate-800/80 rounded-2xl">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-wider" id="test-category-label">
+                            Category
+                        </span>
+                        <span class="text-xs text-slate-400 font-semibold" id="test-progress-counter">
+                            Question 1 of 10
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2" id="timer-box">
+                        <div class="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></div>
+                        <span class="text-sm font-bold text-rose-400 tracking-wider font-mono" id="test-timer-display">
+                            10s Left
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Question Display Box -->
+                <div class="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 md:p-12 text-center shadow-2xl space-y-8 overflow-hidden min-h-[340px] flex flex-col justify-between">
+                    <div class="absolute -top-12 -left-12 w-48 h-48 bg-indigo-500/5 rounded-full blur-2xl"></div>
+                    <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl"></div>
+
+                    <div class="text-slate-500 text-xs tracking-widest uppercase font-bold" id="question-descriptor-sub">
+                        Solve the following expression
+                    </div>
+
+                    <div class="relative py-4">
+                        <h3 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white select-none transition-all scale-100" id="test-question-string">
+                            0 + 0
+                        </h3>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-center space-x-2" id="microphone-wave">
+                            <div class="flex items-end space-x-0.5 h-4 w-6 bg-transparent" id="sound-bars">
+                                <span class="w-1 bg-brand-500 h-1 rounded-full animate-pulse"></span>
+                                <span class="w-1 bg-brand-500 h-2 rounded-full animate-pulse"></span>
+                                <span class="w-1 bg-brand-500 h-3 rounded-full animate-pulse"></span>
+                                <span class="w-1 bg-brand-500 h-1 rounded-full animate-pulse"></span>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400" id="mic-status-label">Voice Activated & Listening...</span>
+                        </div>
+
+                        <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm min-h-[50px] flex items-center justify-center text-center">
+                            <span class="text-indigo-300 font-medium italic" id="test-spoken-transcript">
+                                Speak your answer clearly...
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Immediate overlay for correct/incorrect -->
+                    <div id="validation-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm hidden flex-col items-center justify-center space-y-3 animate-fade-in">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-white" id="validation-icon-box"></div>
+                        <h4 class="text-2xl font-black" id="validation-title">Correct Answer!</h4>
+                        <p class="text-sm text-slate-400 font-medium" id="validation-subtitle">Moving to next question in 1s...</p>
+                    </div>
+                </div>
+
+                <!-- Manual Keyboard Input Fallback Option -->
+                <div class="bg-slate-900/20 border border-slate-800/50 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+                    <div class="text-xs text-slate-400">
+                        <span class="font-bold text-slate-200">Tip:</span> If you cannot speak or speech is unsupported, you can type your answer here.
+                    </div>
+                    <div class="flex w-full md:w-auto space-x-2">
+                        <input type="text" id="manual-answer-input" placeholder="Type answer..." class="px-3 py-1.5 bg-slate-900 text-xs rounded-lg border border-slate-700 text-white focus:outline-none focus:border-indigo-500 w-full md:w-32">
+                        <button onclick="submitManualAnswer()" class="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-xs font-bold text-white rounded-lg transition">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bottom Action controls -->
+                <div class="flex items-center justify-between pt-4">
+                    <span class="text-xs text-slate-500">Note: Answer verifies instantly upon speaking!</span>
+                    <button onclick="forceSubmitTest()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-rose-600/10 flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                        <span>Submit Test Now</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TEST ASSESSMENT REPORT -->
+            <section id="view-report" class="hidden space-y-8 animate-fade-in max-w-2xl mx-auto">
+                <div class="text-center space-y-3">
+                    <div class="inline-flex p-3 bg-emerald-500/10 rounded-full border border-emerald-500/20 text-emerald-400">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-white">Test Completed Successfully!</h2>
+                    <p class="text-xs text-slate-400">Review your final assessment score and type-specific breakdown details below.</p>
+                </div>
+
+                <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-around gap-6 text-center md:text-left">
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Combined Accuracy</span>
+                        <h3 class="text-5xl md:text-6xl font-black text-indigo-400 font-mono" id="report-accuracy-percentage">0%</h3>
+                        <p class="text-xs text-slate-500" id="report-fraction-score">0 / 0 Questions Correct</p>
+                    </div>
+                    <div class="h-px w-full md:h-16 md:w-px bg-slate-800"></div>
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase font-extrabold tracking-wider text-slate-400">New Performance Rating</span>
+                        <h3 class="text-5xl md:text-6xl font-black text-brand-400 font-mono" id="report-rating-display">120</h3>
+                    </div>
+                    <div class="h-px w-full md:h-16 md:w-px bg-slate-800"></div>
+                    <div class="space-y-1">
+                        <h4 class="text-md font-bold text-slate-100" id="report-feedback-title">Good Performance!</h4>
+                        <p class="text-xs text-slate-400 max-w-xs">Keep practicing regularly to build instant numerical fluency and reflexes.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-200">Accuracy Breakdown By Type</h3>
+                    <div class="space-y-4" id="report-category-breakdown">
+                        <!-- Dynamic category bar elements -->
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-4 pt-4 border-t border-slate-900">
+                    <button onclick="navigateTo('home')" class="px-5 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-300 font-bold rounded-xl transition">
+                        Return Home
+                    </button>
+                    <div class="flex space-x-2">
+                        <button onclick="saveTestScoreMarkdown()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl transition shadow-lg shadow-indigo-600/15 flex items-center space-x-2">
+                            <span>Save Score to MD</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- APP SETTINGS PAGE -->
+            <section id="view-settings" class="hidden space-y-8 animate-fade-in">
+                <div class="pb-4 border-b border-slate-800">
+                    <h2 class="text-2xl font-extrabold text-white">App Configurations</h2>
+                    <p class="text-xs text-slate-400">Configure profile, timers per question, or reset AI levels.</p>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-6">
+                    <!-- Logged In Profile Details -->
+                    <div class="pb-4 border-b border-slate-800 space-y-2">
+                        <p class="text-xs text-slate-400">Logged In User ID: <span class="font-bold text-white font-mono" id="setting-display-id">None</span></p>
+                        <p class="text-xs text-slate-400">Profile Name: <span class="font-bold text-indigo-400" id="setting-display-name">None</span></p>
+                        <button onclick="handleLogout()" class="mt-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md">
+                            Log Out (Change Account) 🚪
+                        </button>
+                    </div>
+
+                    <!-- INCOGNITO / PRACTICE MODE CONTROL -->
+                    <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-100">🕵️ Incognito / Custom Practice Mode</h3>
+                                <p class="text-xs text-slate-400">इसे ऑन करने पर आपकी रेटिंग अपडेट नहीं होगी और आप मनपसंद लेवल चुन सकते हैं।</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="incognito-toggle" class="sr-only peer" onchange="toggleIncognitoUI()">
+                                <div class="w-11 h-6 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+
+                        <!-- DROP DOWN TO SELECT PRACTICE TIER LEVEL -->
+                        <div id="incognito-level-box" class="hidden space-y-2 border-t border-slate-800 pt-3">
+                            <label class="text-xs font-bold text-slate-300">Select Practice Tier Level:</label>
+                            <select id="incognito-tier-select" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-indigo-400 font-bold focus:outline-none">
+                                <option value="learner">Learner (Beginner)</option>
+                                <option value="silver">Silver Tier</option>
+                                <option value="gold">Gold Tier</option>
+                                <option value="diamond">Diamond Tier</option>
+                                <option value="heroic">Heroic / Grandmaster Tier</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-100">Global Countdown Timers</h3>
+                            <p class="text-xs text-slate-400">Enable or disable timer-enforced limits across all tests.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="global-timer-toggle" class="sr-only peer" checked onchange="toggleGlobalTimerSetting()">
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">Category Config Table</h4>
+                        <div class="divide-y divide-slate-800" id="settings-categories-list">
+                            <!-- Dynamic settings inputs -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end pt-4">
+                    <button onclick="resetAIDifficulty()" class="px-6 py-3 bg-rose-950/40 hover:bg-rose-900 border border-rose-800 text-rose-300 font-bold rounded-xl transition shadow-lg mr-2">
+                        Reset AI Difficulty
+                    </button>
+                    <button onclick="saveAllSettings()" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/10">
+                        Apply Settings
+                    </button>
+                </div>
+            </section>
+
+            <!-- SCORE HISTORY & GRAPH PAGE -->
+            <section id="view-scores" class="hidden space-y-8 animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white">Scores Dashboard</h2>
+                        <p class="text-xs text-slate-400">Records written into virtual file <code class="text-indigo-400 font-mono text-[11px] bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-800/35">calculation_score.md</code>.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleScoreViewMode()" id="score-toggle-btn" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-xs font-bold text-white rounded-xl transition flex items-center space-x-2">
+                            📊 <span id="score-toggle-label">Graph View</span>
+                        </button>
+                        <button onclick="downloadRawMarkdown()" class="px-3 py-2 bg-slate-900 border border-slate-800 hover:text-white text-xs font-bold text-slate-400 rounded-xl transition">
+                            Export .md
+                        </button>
+                        <button onclick="clearScoreHistory()" class="px-3 py-2 bg-rose-950/20 hover:bg-rose-950/50 hover:text-rose-300 text-xs font-bold text-rose-400 rounded-xl transition">
+                            Clear Data
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div id="score-table-container" class="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950/60 border-b border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+                                    <th class="p-4">Date & Time</th>
+                                    <th class="p-4">Total Q</th>
+                                    <th class="p-4">Score</th>
+                                    <th class="p-4">Accuracy</th>
+                                    <th class="p-4">Category Breakdown</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scores-table-body" class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                                <!-- Populated rows -->
+                            </tbody>
+                        </table>
+                        <div id="no-scores-indicator" class="hidden p-8 text-center text-slate-500 text-sm italic">
+                            No performance history records found. Start a new test to write score records!
+                        </div>
+                    </div>
+
+                    <div id="score-graph-container" class="hidden bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 space-y-6">
+                        <h3 class="text-sm font-bold text-slate-200">Historical Accuracy Trend Chart</h3>
+                        <div class="w-full h-64 bg-slate-950/50 border border-slate-800/50 rounded-xl relative flex items-center justify-center p-4">
+                            <div id="svg-chart-wrapper" class="w-full h-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GLOBAL LEADERBOARD PAGE -->
+            <section id="view-leaderboard" class="hidden space-y-8 animate-fade-in">
+                <div class="pb-4 border-b border-slate-800">
+                    <h2 class="text-2xl font-extrabold text-white">Global Math Rankings 🏆</h2>
+                    <p class="text-xs text-slate-400">सभी छात्रों की लाइव योग्यता (Elo Rating) और वैश्विक रैंक सूची।</p>
+                </div>
+
+                <!-- User Rating Stats Card -->
+                <div class="bg-gradient-to-r from-indigo-950/40 to-slate-900/40 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-500/30">
+                            You
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-200" id="lb-user-name">Guest Student</h3>
+                            <p class="text-[11px] text-slate-400">अपनी रैंक बढ़ाने के लिए टेस्ट खेलते रहें!</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block font-semibold">Your Rating</span>
+                        <span class="text-lg font-black text-indigo-400 font-mono" id="lb-user-rating">120</span>
+                    </div>
+                </div>
+
+                <!-- Rankings Data Grid -->
+                <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-950/60 border-b border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+                                <th class="p-4 w-16 text-center">Rank</th>
+                                <th class="p-4">Student Name</th>
+                                <th class="p-4 text-center">Rating (Elo)</th>
+                                <th class="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-table-body" class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                            <!-- Loaded dynamically from Google Sheets Cloud -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 📊 Daily Practice Bar Chart -->
+                <div class="mt-8 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-200 flex items-center space-x-2">
+                        <span>📊 आज का अभ्यास दंड आलेख (Today's Solved Questions Chart)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">सभी छात्रों द्वारा आज हल किए गए कुल प्रश्नों की संख्या (हर रात 12:00 बजे रीसेट होती है)।</p>
+                    
+                    <!-- Chart container -->
+                    <div class="w-full bg-slate-950/50 border border-slate-800/50 rounded-xl p-4 flex flex-col space-y-3" id="lb-bar-chart-container">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+            </section>
+              
+            <!-- MY PROFILE PAGE -->
+            <section id="view-profile" class="hidden space-y-8 animate-fade-in max-w-md mx-auto">
+                <div class="text-center space-y-3 pt-4">
+                    <!-- Profile Picture Block -->
+                    <div class="relative w-24 h-24 mx-auto group cursor-pointer" onclick="triggerProfileUpload()">
+                        <div id="profile-image-container" class="w-full h-full rounded-full bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-xl border-2 border-slate-800 overflow-hidden">
+                            <span id="profile-avatar-fallback">👤</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
+                            <span class="text-[10px] font-bold text-white tracking-wide uppercase">Change 📷</span>
+                        </div>
+                        <input type="file" id="profile-file-input" class="hidden" accept="image/*" onchange="handleProfileImageUpload(event)">
+                    </div>
+
+                    <h2 class="text-2xl font-black text-white tracking-tight" id="profile-card-name">Student Name</h2>
+                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" id="profile-card-status">Learner</span>
+                </div>
+
+                <!-- Profile Details Card -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                    <h3 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Profile Information</h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400 font-medium">User ID (यूनिक आईडी)</span>
+                            <span class="font-mono font-bold text-white bg-slate-950 px-2 py-1 rounded border border-slate-800/80" id="profile-display-id">---</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400 font-medium">Class (कक्षा)</span>
+                            <span class="font-bold text-slate-200" id="profile-display-class">---</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400 font-medium">Age (उम्र)</span>
+                            <span class="font-bold text-slate-200" id="profile-display-age">---</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-400 font-medium">Current Math Rating</span>
+                            <span class="font-mono font-black text-indigo-400 text-sm" id="profile-display-rating">120</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SWITCH ACCOUNT LIST SECTION -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
+                    <h3 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2 flex items-center justify-between">
+                        <span>Switch Account 🔄</span>
+                        <span class="text-[10px] text-slate-400 lowercase font-normal">Saved sessions</span>
+                    </h3>
+                    <div id="switch-accounts-list" class="space-y-2">
+                        <!-- Populated dynamically via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Action -->
+                <div class="text-center pt-2">
+                    <button onclick="handleLogout()" class="w-full py-2.5 bg-rose-600/10 hover:bg-rose-600 border border-rose-500/20 hover:border-rose-600 text-rose-400 hover:text-white font-bold text-xs rounded-xl transition shadow-md">
+                        🚪 Log Out From This Device
+                    </button>
+                </div>
+            </section>
+
+            <!-- ADMIN CONTROL CENTER VIEW -->
+            <section id="view-admin" class="hidden space-y-8 animate-fade-in">
+                <!-- Header Title -->
+                <div class="pb-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white flex items-center gap-2">
+                            <span>🛠️ Admin Control Panel</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Calcu-Voice Cloud Student Management System</p>
+                    </div>
+                    <span class="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full font-bold">
+                        Secure Access
+                    </span>
+                </div>
+
+                <!-- PASSWORD LOCK SCREEN -->
+                <div id="admin-auth" class="space-y-6 max-w-md mx-auto w-full pt-6">
+                    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+                        <h3 class="text-xl font-bold text-center text-white">🔒 Admin Authentication</h3>
+                        <p class="text-xs text-slate-400 text-center">कृपया एडमिन पैनल खोलने के लिए अपना गुप्त पिन दर्ज करें।</p>
+                        <div class="space-y-2">
+                            <input type="password" id="admin-pin" placeholder="Enter Admin PIN..." class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-center text-sm text-white focus:outline-none focus:border-rose-500 w-full tracking-widest font-mono">
+                        </div>
+                        <button onclick="checkAdminAuth()" class="w-full px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-rose-600/10">
+                            Unlock Panel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MAIN ADMIN INTERFACE -->
+                <div id="admin-dashboard" class="hidden space-y-8">
+                    
+                    <!-- Quick Info & Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-900/40 border border-slate-800 rounded-2xl flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase">Total Logged Students</h3>
+                                <p class="text-2xl font-black text-indigo-400 font-mono mt-1" id="total-students-count">0</p>
+                            </div>
+                            <button onclick="fetchAdminCloudData()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition">
+                                🔄 Refresh Data
+                            </button>
+                        </div>
+                        <div class="p-4 bg-slate-900/40 border border-slate-800 rounded-2xl flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase">Admin Session Status</h3>
+                                <p class="text-sm font-semibold text-emerald-400 mt-2">● Active & Secure</p>
+                            </div>
+                            <button onclick="lockAdminPanel()" class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition">
+                                🔒 Lock Panel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- NEW STUDENT REGISTRATION FORM -->
+                    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-sm font-extrabold text-slate-200 flex items-center space-x-2">
+                            <span>👤 Register New Student Account</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">यहाँ से आप किसी भी नए छात्र का अकाउंट सीधे गूगल शीट डेटाबेस में बना सकते हैं।</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                            <input type="text" id="new-reg-name" placeholder="Full Name (असली नाम)" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <input type="text" id="new-reg-class" placeholder="Class (कक्षा जैसे: 8th)" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <input type="number" id="new-reg-age" placeholder="Age (उम्र)" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <input type="text" id="new-reg-userid" placeholder="Create User ID (यूनिक)" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-mono">
+                            <input type="password" id="new-reg-password" placeholder="Create Password" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <button onclick="handleAdminSignup()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 font-bold text-xs text-white rounded-xl transition shadow-lg">
+                                Create Student Account
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Student Management Table -->
+                    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
+                        <div class="p-4 bg-slate-950/60 border-b border-slate-800 flex justify-between items-center">
+                            <h3 class="text-sm font-extrabold text-slate-200">User Details & Ratings Management</h3>
+                            <span class="text-[11px] text-slate-500">Note: Edits update both Users & Leaderboard sheets</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-950/40 border-b border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+                                        <th class="p-4">User ID</th>
+                                        <th class="p-4">Name</th>
+                                        <th class="p-4">Password</th>
+                                        <th class="p-4 text-center">Class</th>
+                                        <th class="p-4 text-center">Age</th>
+                                        <th class="p-4 text-center">Elo Rating</th>
+                                        <th class="p-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-body" class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                                    <tr>
+                                        <td colspan="7" class="p-8 text-center text-slate-500 italic">कृपया डेटा लोड करने के लिए Refresh Data बटन दबाएं।</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+            
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-950/90 border-t border-slate-800/80 backdrop-blur-lg z-40 px-4 py-2 flex justify-around items-center text-xs">
+            
+            <!-- Home Button -->
+            <button onclick="navigateTo('home')" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-400 focus:text-indigo-400 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="font-bold text-[10px]">Home</span>
+            </button>
+
+            <!-- Score History Button -->
+            <button onclick="navigateTo('scores')" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-400 focus:text-indigo-400 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 012-2h2a2 2 0 012 2z"/>
+                </svg>
+                <span class="font-bold text-[10px]">Score History</span>
+            </button>
+
+            <!-- Leaderboard Button -->
+            <button onclick="navigateTo('leaderboard')" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-400 focus:text-indigo-400 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                <span class="font-bold text-[10px]">Leaderboard</span>
+            </button>
+
+            <!-- Profile Button -->
+            <button onclick="navigateTo('profile')" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-400 focus:text-indigo-400 transition">
+                <div id="bottom-nav-avatar-container" class="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden bg-slate-900 border border-slate-800">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </div>
+                <span class="font-bold text-[10px]">Profile</span>
+            </button>
+
+            <!-- Admin Button (केवल shivam@123 के लिए) -->
+            <button id="nav-btn-admin" onclick="navigateTo('admin')" class="hidden flex-col items-center space-y-1 text-rose-400 hover:text-rose-300 focus:text-rose-300 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                </svg>
+                <span class="font-bold text-[10px]">Admin</span>
+            </button>
+
+        </nav>
+
+    </div>
+
+    <!-- EDIT USER MODAL FOR ADMIN -->
+    <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-white flex items-center justify-between">
+                <span>✏️ Edit User Details</span>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white">✕</button>
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold">User ID (Read Only)</label>
+                    <input type="text" id="edit-userid" readonly class="w-full px-3 py-2 bg-slate-950/50 border border-slate-800 rounded-xl text-xs text-slate-400 font-mono">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold">Name</label>
+                    <input type="text" id="edit-name" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold">Password</label>
+                    <input type="text" id="edit-password" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] text-slate-400 font-bold">Class</label>
+                        <input type="text" id="edit-class" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400 font-bold">Age</label>
+                        <input type="number" id="edit-age" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold">Elo Rating</label>
+                    <input type="number" step="0.1" id="edit-rating" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-indigo-400 font-mono font-bold focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="closeEditModal()" class="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition">Cancel</button>
+                <button onclick="saveUserEdits()" class="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-lg">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- App Toast Message System -->
+    <div id="app-toast" class="fixed bottom-6 left-6 z-50 bg-slate-900 border border-indigo-500/50 text-white rounded-xl px-4 py-3 shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2 text-xs font-bold">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-message">Message details loaded</span>
+    </div>
+
+    <!-- Global Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-slate-600 text-[11px] font-medium tracking-wide pb-20">
+        &copy; 2026 Calcu-Voice App. Engineered for Premium Mental Calculation Performance.
+    </footer>
+
+    <!-- App JavaScript Engine -->
+    <script src="./app.js"></script>
+</body>
 </html>
