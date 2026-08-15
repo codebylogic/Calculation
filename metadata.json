@@ -1,0 +1,6 @@
+{
+  "name": "Calcu-Voice Math Trainer",
+  "description": "Interactive voice-powered mental math calculation trainer supporting English, Hindi, and Hinglish with Elo rating, live podium, customizable test engine, and leaderboard.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

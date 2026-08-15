@@ -1,0 +1,17 @@
+{
+  "name": "Calcu-Voice Math Trainer",
+  "short_name": "Calcu-Voice",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "description": "Interactive voice-powered mental math calculation trainer supporting English, Hindi, and Hinglish.",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
