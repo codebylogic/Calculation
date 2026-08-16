@@ -1897,57 +1897,100 @@ function getDivisors(n) {
 }
 
 function generateTieredBODMAS(tier) {
-    let termCount, digitMin, digitMax;
-    if (tier === "gold" || tier === "diamond" || tier === "heroic") {
-        termCount = 4; digitMin = 10; digitMax = 999; 
-    } else if (tier === "silver") {
-        termCount = 3; digitMin = 10; digitMax = 99; 
-    } else {
-        termCount = 3; digitMin = 1; digitMax = 9;
-    }
-
-    const ops = ['+', '-', '×', '÷'];
-    let expressionParts = [];
-
-    let firstTerm = randInt(digitMin, digitMax);
-    expressionParts.push(String(firstTerm));
-    let chainValue = firstTerm; 
-
-    for (let i = 1; i < termCount; i++) {
-        let op = ops[randInt(0, ops.length - 1)];
-        let nextTerm;
-
-        if (op === '÷') {
-            const divisors = getDivisors(chainValue).filter(d => d <= 12);
-            if (divisors.length === 0) {
-                op = '+'; 
-                nextTerm = randInt(digitMin, digitMax);
-                chainValue = nextTerm;
+    // Balanced Medium difficulty question engine for BODMAS across all tiers:
+    // Ensures clean integer answers, varied BODMAS patterns, suitable for mental math.
+    const patterns = [
+        // Pattern 1: A + B × C or A - B × C
+        () => {
+            const b = randInt(3, 9);
+            const c = randInt(3, 12);
+            const isSub = Math.random() > 0.5;
+            if (isSub) {
+                const product = b * c;
+                const a = randInt(product + 5, product + 40);
+                return { questionText: `${a} - ${b} × ${c}`, correctAnswer: a - (b * c) };
             } else {
-                nextTerm = divisors[randInt(0, divisors.length - 1)];
-                chainValue = chainValue / nextTerm;
+                const a = randInt(10, 50);
+                return { questionText: `${a} + ${b} × ${c}`, correctAnswer: a + (b * c) };
             }
-        } else if (op === '×') {
-            nextTerm = randInt(2, 12); 
-            chainValue = chainValue * nextTerm;
-        } else {
-            nextTerm = randInt(digitMin, digitMax);
-            chainValue = nextTerm; 
+        },
+        // Pattern 2: A × B + C or A × B - C
+        () => {
+            const a = randInt(4, 12);
+            const b = randInt(3, 9);
+            const product = a * b;
+            const isSub = Math.random() > 0.5;
+            if (isSub) {
+                const c = randInt(5, Math.max(6, product - 5));
+                return { questionText: `${a} × ${b} - ${c}`, correctAnswer: product - c };
+            } else {
+                const c = randInt(10, 45);
+                return { questionText: `${a} × ${b} + ${c}`, correctAnswer: product + c };
+            }
+        },
+        // Pattern 3: A + B ÷ C or A - B ÷ C (clean division)
+        () => {
+            const c = randInt(3, 9);
+            const quotient = randInt(3, 12);
+            const b = c * quotient;
+            const isSub = Math.random() > 0.5;
+            if (isSub) {
+                const a = randInt(quotient + 5, quotient + 50);
+                return { questionText: `${a} - ${b} ÷ ${c}`, correctAnswer: a - quotient };
+            } else {
+                const a = randInt(10, 50);
+                return { questionText: `${a} + ${b} ÷ ${c}`, correctAnswer: a + quotient };
+            }
+        },
+        // Pattern 4: A ÷ B + C × D or A ÷ B - C × D
+        () => {
+            const b = randInt(3, 8);
+            const q1 = randInt(2, 9);
+            const a = b * q1;
+            const c = randInt(2, 8);
+            const d = randInt(2, 6);
+            const q2 = c * d;
+            if (Math.random() > 0.5) {
+                return { questionText: `${a} ÷ ${b} + ${c} × ${d}`, correctAnswer: q1 + q2 };
+            } else {
+                const sum = q1 + q2;
+                return { questionText: `${sum} + ${a} ÷ ${b} - ${c} × ${d}`, correctAnswer: sum + q1 - q2 };
+            }
+        },
+        // Pattern 5: (A + B) × C or (A - B) ÷ C with parentheses
+        () => {
+            if (Math.random() > 0.5) {
+                const c = randInt(3, 8);
+                const quotient = randInt(3, 10);
+                const b = randInt(4, 25);
+                const a = (c * quotient) + b;
+                return { questionText: `(${a} - ${b}) ÷ ${c}`, correctAnswer: quotient };
+            } else {
+                const a = randInt(4, 15);
+                const b = randInt(3, 12);
+                const c = randInt(2, 6);
+                return { questionText: `(${a} + ${b}) × ${c}`, correctAnswer: (a + b) * c };
+            }
+        },
+        // Pattern 6: A × B + C × D or A × (B + C)
+        () => {
+            if (tier === "gold" || tier === "diamond" || tier === "heroic") {
+                const a = randInt(3, 8);
+                const b = randInt(3, 8);
+                const c = randInt(2, 6);
+                const d = randInt(2, 6);
+                return { questionText: `${a} × ${b} + ${c} × ${d}`, correctAnswer: (a * b) + (c * d) };
+            } else {
+                const a = randInt(3, 7);
+                const b = randInt(4, 12);
+                const c = randInt(2, 8);
+                return { questionText: `${a} × (${b} + ${c})`, correctAnswer: a * (b + c) };
+            }
         }
+    ];
 
-        expressionParts.push(op, String(nextTerm));
-    }
-
-    const questionText = expressionParts.join(' ');
-    const evalExpr = questionText.replace(/×/g, '*').replace(/÷/g, '/');
-    let correctAnswer;
-    try {
-        correctAnswer = Function(`"use strict"; return (${evalExpr});`)();
-        correctAnswer = parseFloat(correctAnswer.toFixed(2));
-    } catch (e) {
-        correctAnswer = 0;
-    }
-    return { questionText, correctAnswer };
+    const chosenPattern = patterns[randInt(0, patterns.length - 1)];
+    return chosenPattern();
 }
 
 function generateArithmeticExpression(categoryName) {
@@ -2220,20 +2263,9 @@ function generateArithmeticExpression(categoryName) {
         }
         case "BODMAS Rules": 
         default: {
-            if (activeTier !== "learner") {
-                const result = generateTieredBODMAS(activeTier);
-                questionText = result.questionText;
-                correctAnswer = result.correctAnswer;
-            } else if (level === 1) {
-                questionText = "2 × 3 + 4";
-                correctAnswer = 10;
-            } else if (level === 2) {
-                questionText = "12 ÷ 3 + 5 × 2";
-                correctAnswer = 14;
-            } else {
-                questionText = "(15 + 5) ÷ 4 × 9";
-                correctAnswer = 45;
-            }
+            const result = generateTieredBODMAS(activeTier);
+            questionText = result.questionText;
+            correctAnswer = result.correctAnswer;
             break;
         }
     }
