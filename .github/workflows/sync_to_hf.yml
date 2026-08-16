@@ -2,9 +2,8 @@ name: Sync to Hugging Face Hub
 
 on:
   push:
-    branches: [main] # यदि आपकी मुख्य ब्रांच master है, तो यहाँ master लिखें
+    branches: [main]
 
-  # इसे आप manual भी चला सकते हैं
   workflow_dispatch:
 
 jobs:
@@ -17,5 +16,5 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://codebylogic:$HF_TOKEN@huggingface.co/spaces/codebylogic/my-ai-chatbot main
+        run: git push --force https://Codebylogic:$HF_TOKEN@huggingface.co/spaces/Codebylogic/test-ai main
         
